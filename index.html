@@ -135,7 +135,7 @@
             </div>
           </div>
         </div>
-        <p class="text-gray-500 text-sm mt-4">PDF optimized for standard business‑card sleeves (90×54mm)</p>
+        <p class="text-gray-500 text-sm mt-4">PDF exports as A4 with cutting guidelines for easy printing and trimming</p>
       </div>
     </div>
 
@@ -259,6 +259,50 @@
     // Initial render
     updateCard();
 
+    /* ------------------------- Create printable card ---------------- */
+    function createPrintableCard(cardEl) {
+      // Create a container for A4 printing
+      const printContainer = document.createElement('div');
+      printContainer.style.cssText = `
+        width: 210mm;
+        height: 297mm;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        position: relative;
+      `;
+      
+      // Clone the card
+      const cardClone = cardEl.cloneNode(true);
+      cardClone.style.cssText = `
+        width: 85.6mm;
+        height: 53.98mm;
+        box-shadow: none;
+        border: 2px dashed #ccc;
+        transform: none;
+        margin: 0;
+      `;
+      
+      // Add cutting guidelines
+      const guidelines = document.createElement('div');
+      guidelines.innerHTML = `
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 95.6mm; height: 63.98mm; border: 1px dashed #999; pointer-events: none;"></div>
+        <div style="position: absolute; bottom: 20mm; left: 50%; transform: translateX(-50%); font-size: 10px; color: #666; text-align: center;">
+          Cut along the dashed lines<br>
+          Card size: 85.6mm × 53.98mm
+        </div>
+      `;
+      
+      printContainer.appendChild(guidelines);
+      printContainer.appendChild(cardClone);
+      
+      // Temporarily add to document for rendering
+      document.body.appendChild(printContainer);
+      
+      return printContainer;
+    }
+
     /* ------------------------- PDF download -------------------------- */
     downloadBtn.addEventListener('click', () => {
       if (!validateForm()) {
@@ -282,7 +326,7 @@
 
       html2pdf()
         .set({
-          margin: [2, 2],
+          margin: [10, 10],
           filename: filename,
           html2canvas: { 
             scale: 4,
@@ -292,20 +336,30 @@
           },
           jsPDF: { 
             unit: 'mm', 
-            format: [85.6, 53.98], // Standard credit card size (ISO/IEC 7810 ID-1)
-            orientation: 'landscape'
+            format: 'a4',
+            orientation: 'portrait'
           },
         })
-        .from(cardEl)
+        .from(createPrintableCard(cardEl))
         .save()
         .then(() => {
           // Restore original styling
           cardEl.setAttribute('style', originalStyle);
+          // Clean up the temporary print container
+          const printContainer = document.querySelector('div[style*="210mm"]');
+          if (printContainer) {
+            printContainer.remove();
+          }
         })
         .catch((error) => {
           console.error('PDF generation error:', error);
           alert('There was an error generating the PDF. Please try again.');
           cardEl.setAttribute('style', originalStyle);
+          // Clean up the temporary print container
+          const printContainer = document.querySelector('div[style*="210mm"]');
+          if (printContainer) {
+            printContainer.remove();
+          }
         });
     });
 
