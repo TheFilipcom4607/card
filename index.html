@@ -261,46 +261,30 @@
 
     /* ------------------------- Create printable card ---------------- */
     function createPrintableCard(cardEl) {
-      // Create a container for A4 printing
-      const printContainer = document.createElement('div');
-      printContainer.style.cssText = `
-        width: 210mm;
-        height: 297mm;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: white;
-        position: relative;
-      `;
-      
-      // Clone the card
+      // Clone the original card element
       const cardClone = cardEl.cloneNode(true);
+      cardClone.id = 'print-card';
+      
+      // Apply print-specific styles directly
       cardClone.style.cssText = `
-        width: 85.6mm;
-        height: 53.98mm;
-        box-shadow: none;
-        border: 2px dashed #ccc;
-        transform: none;
-        margin: 0;
+        width: 85.6mm !important;
+        height: 53.98mm !important;
+        background: white !important;
+        border: 2px dashed #ccc !important;
+        border-radius: 12px !important;
+        padding: 24px !important;
+        box-shadow: none !important;
+        transform: none !important;
+        margin: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        text-align: center !important;
+        font-family: 'Inter', system-ui, sans-serif !important;
+        position: relative !important;
       `;
       
-      // Add cutting guidelines
-      const guidelines = document.createElement('div');
-      guidelines.innerHTML = `
-        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 95.6mm; height: 63.98mm; border: 1px dashed #999; pointer-events: none;"></div>
-        <div style="position: absolute; bottom: 20mm; left: 50%; transform: translateX(-50%); font-size: 10px; color: #666; text-align: center;">
-          Cut along the dashed lines<br>
-          Card size: 85.6mm × 53.98mm
-        </div>
-      `;
-      
-      printContainer.appendChild(guidelines);
-      printContainer.appendChild(cardClone);
-      
-      // Temporarily add to document for rendering
-      document.body.appendChild(printContainer);
-      
-      return printContainer;
+      return cardClone;
     }
 
     /* ------------------------- PDF download -------------------------- */
@@ -326,13 +310,15 @@
 
       html2pdf()
         .set({
-          margin: [10, 10],
+          margin: [20, 20],
           filename: filename,
           html2canvas: { 
-            scale: 4,
+            scale: 3,
             useCORS: true,
             allowTaint: true,
-            logging: false
+            logging: false,
+            width: 323, // 85.6mm at 96dpi
+            height: 204  // 53.98mm at 96dpi
           },
           jsPDF: { 
             unit: 'mm', 
@@ -340,26 +326,16 @@
             orientation: 'portrait'
           },
         })
-        .from(createPrintableCard(cardEl))
+        .from(cardEl)
         .save()
         .then(() => {
           // Restore original styling
           cardEl.setAttribute('style', originalStyle);
-          // Clean up the temporary print container
-          const printContainer = document.querySelector('div[style*="210mm"]');
-          if (printContainer) {
-            printContainer.remove();
-          }
         })
         .catch((error) => {
           console.error('PDF generation error:', error);
           alert('There was an error generating the PDF. Please try again.');
           cardEl.setAttribute('style', originalStyle);
-          // Clean up the temporary print container
-          const printContainer = document.querySelector('div[style*="210mm"]');
-          if (printContainer) {
-            printContainer.remove();
-          }
         });
     });
 
